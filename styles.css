@@ -1,0 +1,873 @@
+/* ============================================
+   BIRTHDAY LETTER — STYLES
+   ============================================
+   Tweak colors, fonts, and animation feel below.
+   Search for "TWEAK:" comments for key values.
+   ============================================ */
+
+:root {
+  /* TWEAK: Color palette — Stitch design system tokens
+     Surface hierarchy: layered paper sheets (fbf9f4 → f5f3ee → ffffff)
+     Primary: deep forest #18281e | Secondary: dusty rose #7c5454 */
+  --bg-ivory: #f5f3ee;            /* Stitch: surface-container-low */
+  --bg-cream: #fbf9f4;            /* Stitch: surface (primary tabletop) */
+  --bg-warm: #f0eee9;             /* Stitch: surface-container */
+  --table-honey: #c89366;
+  --table-oak: #aa7349;
+  --table-deep: #84502e;
+  --leaf: #7f9471;
+  --leaf-deep: #5d6f50;
+  --rose-soft: #edbaba;           /* Stitch: secondary-fixed-dim */
+  --rose: #7c5454;                /* Stitch: secondary */
+  --rose-deep: #613d3d;           /* Stitch: on-secondary-fixed-variant */
+  --glass: rgba(243, 248, 250, 0.42);
+  --glass-edge: rgba(255, 255, 255, 0.78);
+  --paper: #ffffff;               /* Stitch: surface-container-lowest (letter surface) */
+  --paper-deep: #f0e0cb;          /* Stitch: tertiary-fixed */
+  --envelope: #f0eee9;            /* Stitch: surface-container */
+  --envelope-deep: #e4e2dd;       /* Stitch: surface-variant */
+  --ink: #1b1c19;                 /* Stitch: on-surface (never pure black) */
+  --ink-soft: #434844;            /* Stitch: on-surface-variant */
+  --ink-faint: #737873;           /* Stitch: outline */
+  --seal: #7c5454;                /* Stitch: secondary (wax seal) */
+  --seal-deep: #613d3d;           /* Stitch: on-secondary-fixed-variant */
+  /* Stitch: shadows use on-surface tint, never pure black */
+  --shadow-soft: rgba(27, 28, 25, 0.05);
+  --shadow-deep: rgba(27, 28, 25, 0.10);
+
+  /* TWEAK: Font families */
+  --font-display: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-serif: "Lora", "Iowan Old Style", "Book Antiqua", Georgia, serif;
+  --font-sans: "DM Sans", "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  /* Animation CSS custom properties — driven by JS */
+  --camera-scale: 1;
+  --camera-x: 0vw;
+  --camera-y: 0vh;
+  --camera-origin-x: 54%;
+  --camera-origin-y: 41%;
+  --flap-rotation: 0deg;
+  --flap-progress: 0;
+  --flap-shadow-alpha: 0.08;
+  --letter-offset: 20px;
+  --message-opacity: 0;
+  --hint-opacity: 1;
+  --botanical-drift: 0px;
+  --ambient-shift: 0px;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Stitch: surface as primary tabletop, subtle warm radial accents */
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 36%),
+    radial-gradient(circle at 82% 14%, rgba(212, 163, 163, 0.12), transparent 30%),
+    linear-gradient(180deg, var(--bg-cream) 0%, var(--bg-ivory) 62%, var(--bg-warm) 100%);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Stitch: faint grain texture overlay at 3% opacity to mimic felt-weave paper */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ============================================
+   PAGE-LOAD CURTAIN
+   Cinematic fade-in when the page opens.
+   ============================================ */
+
+/* Stitch: transitions should be ease-in-out, 400-600ms */
+.page-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg-cream);
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 600ms ease-in-out;
+}
+
+.page-curtain.lifted {
+  opacity: 0;
+}
+
+/* ============================================
+   LAYOUT: SCROLL STORY
+   ============================================ */
+
+.experience {
+  min-height: 100vh;
+}
+
+/* TWEAK: Scroll length — larger = slower progression */
+.scroll-story {
+  position: relative;
+  min-height: 460vh;
+}
+
+.sticky-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ============================================
+   CAMERA
+   ============================================ */
+
+.scene-camera {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(var(--camera-x), var(--camera-y), 0) scale(var(--camera-scale));
+  transform-origin: var(--camera-origin-x) var(--camera-origin-y);
+  will-change: transform;
+}
+
+/* ============================================
+   AMBIENT LAYERS
+   ============================================ */
+
+.ambient,
+.dust-layer,
+.stage-vignette,
+.table-wrap,
+.arrangement,
+.scroll-hint {
+  position: absolute;
+}
+
+.ambient {
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambient-left {
+  background:
+    radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.96), transparent 32%),
+    radial-gradient(circle at 28% 35%, rgba(239, 223, 218, 0.26), transparent 38%);
+  transform: translate3d(calc(var(--ambient-shift) * -1), calc(var(--ambient-shift) * 0.4), 0);
+}
+
+.ambient-right {
+  background:
+    radial-gradient(circle at 84% 16%, rgba(255, 255, 255, 0.86), transparent 30%),
+    radial-gradient(circle at 74% 38%, rgba(237, 229, 216, 0.42), transparent 34%);
+  transform: translate3d(var(--ambient-shift), calc(var(--ambient-shift) * -0.3), 0);
+}
+
+.dust-layer {
+  inset: -10%;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 70% 25%, rgba(255, 255, 255, 0.9) 0 1px, transparent 1.3px),
+    radial-gradient(circle at 52% 74%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.25px);
+  background-size: 220px 220px, 260px 260px, 180px 180px;
+  filter: blur(0.2px);
+  pointer-events: none;
+}
+
+/* Floating particle canvas */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+/* ============================================
+   WOODEN TABLE
+   ============================================ */
+
+.table-wrap {
+  inset: auto 0 -2vh;
+  height: 30vh;
+  pointer-events: none;
+}
+
+.table-surface {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 200vw;
+  height: 38vh;
+  transform: translateX(-50%);
+  background:
+    /* Soft top-edge highlight */
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 12%),
+    /* Subtle warm wood — smooth gradient, no harsh stripes */
+    linear-gradient(90deg,
+      #926340 0%, #a87752 12%, #c4956a 28%, #d4a478 42%,
+      #d9aa7e 50%,
+      #d4a478 58%, #c4956a 72%, #a87752 88%, #926340 100%
+    );
+  border-radius: 6px 6px 0 0;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.1),
+    0 -1px 0 rgba(100, 65, 35, 0.15);
+}
+
+/* Very subtle wood grain texture — faint horizontal lines */
+.table-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.04) 0px,
+      rgba(255, 255, 255, 0) 2px,
+      rgba(100, 65, 35, 0.03) 4px,
+      rgba(255, 255, 255, 0) 6px
+    );
+  opacity: 0.7;
+}
+
+/* Soft light reflection on table */
+.table-surface::after {
+  content: "";
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  top: 8%;
+  height: 20%;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+.table-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(820px, 72vw);
+  height: 84px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(90, 61, 39, 0.18) 0%, rgba(90, 61, 39, 0.02) 70%);
+  filter: blur(24px);
+  opacity: 0.55;
+}
+
+/* ============================================
+   ARRANGEMENT — flowers left, envelope+stand right
+   ============================================ */
+
+.arrangement {
+  inset: 0;
+  pointer-events: none;
+}
+
+.arrangement-shadow {
+  left: 42%;
+  bottom: 9vh;
+  width: clamp(180px, 20vw, 280px);
+  height: clamp(36px, 4vw, 56px);
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(105, 76, 53, 0.18) 0%, rgba(105, 76, 53, 0.02) 68%);
+  filter: blur(16px);
+}
+
+/* Bouquet: flowers + vase, positioned left-of-center — large and lush */
+.bouquet-group {
+  position: absolute;
+  left: 42%;
+  bottom: 8vh;
+  width: min(42vw, 580px);
+  height: min(72vh, 780px);
+  transform: translateX(-50%) translateY(var(--botanical-drift));
+}
+
+/* Envelope + stand: positioned close to the bouquet, just to the right */
+.envelope-stand-group {
+  position: absolute;
+  right: 24%;
+  bottom: 8vh;
+  width: clamp(200px, 16vw, 280px);
+  z-index: 5;
+}
+
+/* ============================================
+   WOODEN STAND / EASEL
+   A small tabletop card stand holding the envelope.
+   ============================================ */
+
+.wooden-stand {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* Stand legs: two angled wooden sticks forming a V */
+.stand-leg {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: clamp(60px, 6vh, 90px);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #b8935f, #9a7548, #7c5a34);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+.stand-leg-left {
+  left: 35%;
+  transform-origin: bottom center;
+  transform: rotate(8deg);
+}
+
+.stand-leg-right {
+  right: 35%;
+  transform-origin: bottom center;
+  transform: rotate(-8deg);
+}
+
+/* Ledge: the small horizontal lip the envelope rests on */
+.stand-ledge {
+  position: absolute;
+  left: 28%;
+  right: 28%;
+  bottom: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #c49a66, #a87d4e);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 4px rgba(27, 28, 25, 0.08);
+}
+
+/* Back support: the angled piece behind the envelope */
+.stand-back-support {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 3px;
+  height: clamp(70px, 7vh, 100px);
+  transform: translateX(-50%) rotate(4deg);
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, #a07842, #8a6638);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
+/* Shadow cast by the stand on the table */
+.stand-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 70%;
+  height: 14px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(27, 28, 25, 0.1) 0%, transparent 70%);
+  filter: blur(6px);
+}
+
+/* ============================================
+   SVG BOTANICALS
+   ============================================ */
+
+.botanicals {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.botanicals-back {
+  z-index: 1;
+}
+
+.botanicals-front {
+  z-index: 6;
+}
+
+/* ============================================
+   GLASS VASE
+   ============================================ */
+
+.vase {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: clamp(128px, 11vw, 168px);
+  height: clamp(220px, 31vh, 310px);
+  transform: translateX(-50%);
+  border-radius: 24px 24px 34px 34px / 18px 18px 46px 46px;
+  clip-path: polygon(20% 0%, 80% 0%, 72% 100%, 28% 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 255, 255, 0.28) 20%, rgba(210, 223, 228, 0.18) 60%, rgba(255, 255, 255, 0.34) 100%),
+    linear-gradient(180deg, rgba(183, 203, 191, 0.18), rgba(126, 164, 138, 0.16));
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 24px 50px rgba(90, 68, 52, 0.16);
+  backdrop-filter: blur(12px);
+  z-index: 3;
+}
+
+.vase::before {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 10%;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.16));
+  opacity: 0.72;
+}
+
+.vase-highlight,
+.vase-waterline,
+.vase-reflection {
+  position: absolute;
+  pointer-events: none;
+}
+
+.vase-highlight {
+  left: 24%;
+  top: 8%;
+  width: 16%;
+  height: 72%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.02));
+  opacity: 0.7;
+}
+
+.vase-waterline {
+  left: 28%;
+  right: 28%;
+  top: 44%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 18px 24px rgba(125, 149, 132, 0.2);
+}
+
+.vase-reflection {
+  right: 18%;
+  top: 18%;
+  width: 18%;
+  height: 58%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+}
+
+/* ============================================
+   ENVELOPE
+   ============================================ */
+
+/* Envelope sits on the stand, slightly tilted back like it's leaning */
+.envelope-assembly {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1.45 / 1;
+  margin-bottom: clamp(60px, 6vh, 90px);
+  transform: rotate(-3deg);
+  z-index: 5;
+}
+
+/* Thread/knot removed — envelope now rests on wooden stand */
+
+.envelope-back,
+.envelope-flap,
+.envelope-front {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+
+/* ============================================
+   ENVELOPE INTERIOR — clips the letter inside
+   ============================================ */
+
+.envelope-interior {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  /* --clip-top-overflow: controlled by JS — 0px when closed, -500px when letter emerges */
+  clip-path: inset(var(--clip-top-overflow, 0px) -4px 0 -4px);
+  z-index: 2;
+}
+
+/* ============================================
+   LETTER SHEET
+   ============================================ */
+
+/* Letter — same aspect ratio as envelope, slides up via --letter-offset */
+.letter-sheet {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 92%;
+  aspect-ratio: 1.45 / 1;
+  transform: translateX(-50%) translateY(var(--letter-offset));
+  background: #fffdf9;
+  background-image:
+    linear-gradient(180deg, #ffffff 0%, #fffdf9 50%, #f5ead8 100%);
+  border: 1px solid rgba(195, 200, 194, 0.15);
+  border-radius: 4px;
+  box-shadow:
+    0 4px 20px rgba(27, 28, 25, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  z-index: 3;
+}
+
+/* Subtle paper texture */
+.letter-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(219, 201, 181, 0) 0 26px,
+    rgba(219, 201, 181, 0.1) 26px 27px
+  );
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ============================================
+   LETTER TYPOGRAPHY
+   ============================================ */
+
+.letter-inner {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.8rem 0.5rem;
+  text-align: center;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  opacity: var(--message-opacity);
+  transition: opacity 0.1s linear;
+}
+
+.letter-inner h1,
+.letter-inner p {
+  margin: 0;
+}
+
+/* Stitch: label-sm in all-caps with 10% letter-spacing, light weight */
+.letter-note-overline {
+  font-family: var(--font-sans);
+  font-size: 0.4rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Stitch: display-lg for hero moments, -0.02em letter-spacing for masthead look */
+.letter-inner h1 {
+  font-family: var(--font-display);
+  font-size: clamp(0.85rem, 1.1vw, 1.1rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* Decorative flourish SVG between heading and body */
+.letter-flourish {
+  width: 60px;
+  height: 10px;
+  margin: 0.1rem auto 0.05rem;
+  color: var(--ink-soft);
+}
+
+/* Body text */
+.letter-inner p {
+  font-size: clamp(0.52rem, 0.65vw, 0.68rem);
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+/* Sign-off */
+.letter-signoff {
+  padding-top: 0.6rem;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* ============================================
+   ENVELOPE BODY & FLAP
+   ============================================ */
+
+/* Stitch: "No-Line" rule — no 1px borders, use tonal transitions */
+.envelope-back {
+  background: linear-gradient(180deg, #f5f3ee 0%, #eae8e3 100%);
+  border: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 16px 28px rgba(27, 28, 25, 0.08),
+    0 20px 40px rgba(27, 28, 25, 0.05);
+  z-index: 1;
+}
+
+.envelope-flap {
+  inset: 0 0 auto;
+  height: 56%;
+  background: linear-gradient(180deg, #f6ebde 0%, #ead9c7 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: 50% 0%;
+  transform: perspective(1100px) rotateX(var(--flap-rotation));
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  /* Stitch: ambient shadow, on-surface tint */
+  box-shadow: 0 10px 24px rgba(27, 28, 25, var(--flap-shadow-alpha));
+  z-index: 5;
+}
+
+.envelope-flap::before,
+.envelope-flap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.envelope-flap::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0));
+}
+
+.envelope-flap::after {
+  background: linear-gradient(180deg, #e0ccba 0%, #f1e3d4 100%);
+  transform: rotateX(180deg);
+  backface-visibility: hidden;
+}
+
+/* Stitch: "Wax Seal" action — radial gradient of secondary #7c5454 */
+.envelope-seal {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.28), transparent 42%),
+    radial-gradient(circle at center, var(--seal) 0%, var(--seal-deep) 70%, #4a2828 100%);
+  box-shadow:
+    0 8px 20px rgba(27, 28, 25, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 2px rgba(97, 61, 61, 0.25);
+}
+
+/* Stitch: No-Line rule — tonal shift instead of border */
+.envelope-front {
+  background: linear-gradient(180deg, #f0eee9, #e4e2dd);
+  border: none;
+  clip-path: polygon(0 18%, 50% 58%, 100% 18%, 100% 100%, 0 100%);
+  z-index: 4;
+}
+
+.envelope-front::before,
+.envelope-front::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  bottom: 0;
+  width: 50.5%;
+}
+
+.envelope-front::before {
+  left: 0;
+  background: linear-gradient(135deg, #f5f2ed, #e2cfba);
+  clip-path: polygon(0 0, 100% 42%, 0 100%);
+}
+
+.envelope-front::after {
+  right: 0;
+  background: linear-gradient(225deg, #f2efea, #dac3ab);
+  clip-path: polygon(100% 0, 0 42%, 100% 100%);
+}
+
+/* ============================================
+   STAGE VIGNETTE
+   ============================================ */
+
+.stage-vignette {
+  inset: 0;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0) 48%, rgba(209, 192, 174, 0.12) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 18%, rgba(241, 231, 216, 0.16) 100%);
+  pointer-events: none;
+}
+
+/* ============================================
+   SCROLL HINT
+   ============================================ */
+
+.scroll-hint {
+  left: 50%;
+  bottom: 4.6vh;
+  transform: translateX(-50%);
+  z-index: 20;
+  opacity: var(--hint-opacity);
+  transition: opacity 200ms linear;
+  pointer-events: none;
+}
+
+/* Stitch: glassmorphism — surface at 80% opacity, backdrop-blur 12-20px
+   Stitch: label-sm in all-caps with 10% letter-spacing */
+.scroll-hint span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1.3rem;
+  border-radius: 999px;
+  background: rgba(251, 249, 244, 0.8);
+  border: none;
+  backdrop-filter: blur(16px);
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 20px 40px rgba(27, 28, 25, 0.05);
+}
+
+/* Animated chevron in scroll hint */
+.scroll-chevron {
+  width: 14px;
+  height: 9px;
+  animation: bobChevron 2.4s ease-in-out infinite;
+}
+
+@keyframes bobChevron {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(3px); opacity: 1; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1100px) {
+  .bouquet-group {
+    left: 40%;
+    width: min(46vw, 520px);
+  }
+
+  .envelope-stand-group {
+    right: 18%;
+  }
+}
+
+@media (max-width: 900px) {
+  .scroll-story {
+    min-height: 400vh;
+  }
+
+  .table-surface {
+    width: 240vw;
+  }
+
+  /* Stack vertically on narrow screens: flowers above, envelope below */
+  .bouquet-group {
+    left: 50%;
+    bottom: 22vh;
+    width: min(70vw, 400px);
+    height: min(50vh, 500px);
+  }
+
+  .envelope-stand-group {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 4vh;
+    width: clamp(180px, 50vw, 240px);
+  }
+
+  .letter-inner {
+    padding: 2.2rem 1.6rem 1.8rem;
+  }
+
+  .letter-inner h1 {
+    font-size: clamp(1.5rem, 5.6vw, 2.1rem);
+  }
+
+  .letter-inner p {
+    font-size: clamp(0.92rem, 2.8vw, 1.02rem);
+  }
+
+  .scroll-hint span {
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+  }
+}
+
+@media (max-width: 560px) {
+  .bouquet-group {
+    width: min(80vw, 360px);
+    height: min(45vh, 440px);
+    bottom: 24vh;
+  }
+
+  .envelope-stand-group {
+    width: clamp(160px, 56vw, 220px);
+  }
+
+  .vase {
+    width: 100px;
+    height: 170px;
+  }
+
+  .scroll-hint {
+    bottom: 3vh;
+  }
+
+  .letter-flourish {
+    width: 60px;
+  }
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-chevron {
+    animation: none;
+  }
+
+  .page-curtain {
+    transition-duration: 0.3s;
+  }
+}
